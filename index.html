@@ -510,7 +510,7 @@
 
         let foundAny = false;
         let totalShown = 0;
-        let singleQaPair = null; // { qDiv, aDiv } если найден единственный результат
+        const isSearching = !!query;
 
         categories.forEach((cat) => {
           if (selectedCategory !== "all" && cat.category !== selectedCategory) {
@@ -583,15 +583,18 @@
                 arrow.innerHTML = isActive ? "▼" : "▶";
               });
 
+              // При активном поиске сразу раскрываем все найденные ответы
+              if (isSearching) {
+                qDiv.classList.add("active");
+                aDiv.classList.add("show");
+                arrow.innerHTML = "▼";
+              }
+
               qBlock.appendChild(qDiv);
               qBlock.appendChild(aDiv);
               catDiv.appendChild(qBlock);
 
               currentVisibleQuestions.push(qDiv);
-              if (totalShown === 1 && scoredItems.length === 1) {
-                // потенциальный единственный результат — уточним после всего цикла
-              }
-              singleQaPair = { qDiv, aDiv };
             });
 
             container.appendChild(catDiv);
@@ -601,11 +604,6 @@
         if (!foundAny) {
           container.innerHTML =
             '<div class="no-results">По вашему запросу ничего не найдено 😕</div>';
-        }
-
-        // Автораскрытие, если результат ровно один
-        if (query && totalShown === 1 && singleQaPair) {
-          singleQaPair.qDiv.click();
         }
       }
 
