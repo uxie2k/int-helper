@@ -1,292 +1,413 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Библиотека вопросов</title>
     <style>
-        :root {
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #475569;
-            --border: #e2e8f0;
-            --radius: 12px;
-        }
+      :root {
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --bg: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #0f172a;
+        --text-muted: #475569;
+        --border: #e2e8f0;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+      }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.6;
-        }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        background-color: var(--bg);
+        color: var(--text-main);
+        max-width: 720px; /* Более компактная ширина для удобства чтения */
+        margin: 0 auto;
+        padding: 24px 16px; /* Уменьшенные внешние отступы */
+        line-height: 1.5;
+      }
 
-        h1 {
-            text-align: center;
-            font-size: 2.25rem;
-            margin-bottom: 8px;
-            color: var(--text-main);
-        }
+      h1 {
+        text-align: center;
+        font-size: 1.8rem; /* Чуть уменьшенный, аккуратный заголовок */
+        margin-top: 8px;
+        margin-bottom: 4px;
+        color: var(--text-main);
+        font-weight: 800;
+      }
 
-        .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            margin-bottom: 32px;
-            font-size: 1.1rem;
-        }
+      .subtitle {
+        text-align: center;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+      }
 
-        .header-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
+      .header-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
 
-        .search-container {
-            position: relative;
-            flex-grow: 1;
-            max-width: 450px;
-        }
+      .search-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
 
-        .search-input {
-            width: 100%;
-            padding: 12px 16px;
-            font-size: 1rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            outline: none;
-            box-sizing: border-box;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
+      .search-container {
+        flex-grow: 1;
+      }
 
-        .search-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
+      .search-input {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 0.95rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        outline: none;
+        box-sizing: border-box;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
 
-        .nav-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
+      .search-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
 
-        .nav-link:hover {
-            color: var(--primary-hover);
-            text-decoration: underline;
-        }
+      .nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        transition: color 0.15s;
+      }
 
-        .category {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
+      .nav-link:hover {
+        color: var(--primary-hover);
+        text-decoration: underline;
+      }
 
-        .category-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-top: 0;
-            margin-bottom: 16px;
-            color: var(--text-main);
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+      /* Кнопки переключения категорий */
+      .filters-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 4px;
+      }
 
-        .category-count {
-            font-size: 0.8rem;
-            background: var(--border);
-            color: var(--text-muted);
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-weight: 600;
-        }
+      .filter-btn {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        color: var(--text-muted);
+        transition: all 0.15s ease;
+        user-select: none;
+      }
 
-        .question-block {
-            border-bottom: 1px solid var(--border);
-            padding: 16px 0;
-        }
+      .filter-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
 
-        .question-block:last-child {
-            border-bottom: none;
-        }
+      .filter-btn.active {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        color: #ffffff;
+      }
 
-        .question {
-            cursor: pointer;
-            font-weight: 600;
-            color: var(--text-main);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            user-select: none;
-            transition: color 0.2s;
-        }
+      /* Карточка категории */
+      .category {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 16px 20px; /* Компактные отступы внутри карт */
+        margin-bottom: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
 
-        .question:hover {
-            color: var(--primary);
-        }
+      .category-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 12px;
+        color: var(--text-main);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-        .question-arrow {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            transition: transform 0.2s, color 0.2s;
-        }
+      .category-count {
+        font-size: 0.75rem;
+        background: #f1f5f9;
+        color: var(--text-muted);
+        padding: 2px 6px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
 
-        .question.active .question-arrow {
-            transform: rotate(90deg);
-            color: var(--primary);
-        }
+      /* Блок отдельного вопроса */
+      .question-block {
+        border-bottom: 1px solid #f1f5f9;
+        padding: 10px 0; /* Меньше вертикальных пустот */
+      }
 
-        .answer {
-            display: none;
-            margin-top: 12px;
-            padding: 16px;
-            background: var(--bg);
-            border-left: 4px solid var(--primary);
-            border-radius: 0 8px 8px 0;
-            color: var(--text-muted);
-            white-space: pre-line;
-            line-height: 1.6;
-        }
+      .question-block:last-child {
+        border-bottom: none;
+      }
 
-        .answer.show {
-            display: block;
-        }
+      .question {
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--text-main);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        user-select: none;
+        transition: color 0.15s;
+      }
 
-        .no-results {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 40px 0;
-            font-size: 1.1rem;
-        }
+      .question:hover {
+        color: var(--primary);
+      }
+
+      .question-arrow {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        transition:
+          transform 0.15s,
+          color 0.15s;
+      }
+
+      .question.active .question-arrow {
+        transform: rotate(90deg);
+        color: var(--primary);
+      }
+
+      /* Ответ */
+      .answer {
+        display: none;
+        margin-top: 8px;
+        padding: 10px 14px;
+        background: #f8fafc;
+        border-left: 3px solid var(--primary);
+        border-radius: 0 6px 6px 0;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        white-space: pre-line;
+        line-height: 1.5;
+      }
+
+      .answer.show {
+        display: block;
+      }
+
+      .no-results {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 30px 0;
+        font-size: 1rem;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Библиотека вопросов</h1>
-    <p class="subtitle">Удобный каталог для подготовки к техническим собеседованиям</p>
+    <p class="subtitle">
+      Удобный каталог для подготовки к техническим собеседованиям
+    </p>
 
     <div class="header-actions">
+      <!-- Строка поиска и ссылка -->
+      <div class="search-row">
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Быстрый поиск по вопросам и ответам...">
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="🔍 Быстрый поиск по вопросам и ответам..."
+          />
         </div>
         <a href="creator.html" class="nav-link">Панель управления ⚙️</a>
+      </div>
+
+      <!-- Кнопки категорий (выводятся под поиском) -->
+      <div id="filtersContainer" class="filters-container">
+        <!-- Кнопки создаются динамически через JS -->
+      </div>
     </div>
 
     <div id="content">Загрузка вопросов...</div>
 
     <script>
-        let allData = [];
+      let allData = [];
+      let activeCategory = "all"; // Хранит выбранный фильтр ('all' или имя категории)
+      let searchQuery = ""; // Хранит текущую поисковую строку
 
-        // Загрузка вопросов из JSON
-        fetch('questions.json')
-            .then(res => res.json())
-            .then(data => {
-                allData = data;
-                renderQuestions(allData);
-            })
-            .catch(err => {
-                document.getElementById('content').innerHTML = `
+      // Загрузка вопросов
+      fetch("questions.json")
+        .then((res) => res.json())
+        .then((data) => {
+          allData = data;
+          renderCategoryButtons(allData);
+          renderQuestions(allData);
+        })
+        .catch((err) => {
+          document.getElementById("content").innerHTML = `
                     <div class="no-results" style="color: #ef4444;">
-                        Ошибка загрузки вопросов. Убедитесь, что файл <strong>questions.json</strong> существует и доступен.
+                        Ошибка загрузки вопросов. Убедитесь, что файл <strong>questions.json</strong> доступен.
                     </div>`;
-                console.error(err);
-            });
-
-        // Навешивание события поиска
-        const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase().trim();
-            renderQuestions(allData, query);
+          console.error(err);
         });
 
-        // Рендеринг списка вопросов
-        function renderQuestions(categories, query = '') {
-            const container = document.getElementById('content');
-            container.innerHTML = '';
-            
-            let foundAny = false;
+      // Создание кнопок категорий в исходном порядке
+      function renderCategoryButtons(categories) {
+        const container = document.getElementById("filtersContainer");
+        container.innerHTML = "";
 
-            categories.forEach(cat => {
-                // Фильтруем вопросы, которые подходят под запрос (по вопросу или по ответу)
-                const filteredItems = cat.items.filter(item => 
-                    item.question.toLowerCase().includes(query) || 
-                    item.answer.toLowerCase().includes(query)
-                );
+        // Кнопка "Все" по дефолту
+        const allBtn = document.createElement("button");
+        allBtn.className = "filter-btn active";
+        allBtn.innerText = "Все";
+        allBtn.dataset.category = "all";
+        allBtn.addEventListener("click", () => selectCategory("all"));
+        container.appendChild(allBtn);
 
-                // Если имя категории подходит под поиск, можно показать её целиком
-                const categoryMatches = cat.category.toLowerCase().includes(query);
-                const itemsToShow = categoryMatches ? cat.items : filteredItems;
+        // Кнопки для каждой категории в порядке из JSON
+        categories.forEach((cat) => {
+          const btn = document.createElement("button");
+          btn.className = "filter-btn";
+          btn.innerText = cat.category;
+          btn.dataset.category = cat.category;
+          btn.addEventListener("click", () => selectCategory(cat.category));
+          container.appendChild(btn);
+        });
+      }
 
-                if (itemsToShow.length > 0) {
-                    foundAny = true;
+      // Логика выбора категории по кнопке
+      function selectCategory(categoryName) {
+        activeCategory = categoryName;
 
-                    const catDiv = document.createElement('div');
-                    catDiv.className = 'category';
+        // Визуальное переключение активного класса у кнопок
+        const buttons = document.querySelectorAll(".filter-btn");
+        buttons.forEach((btn) => {
+          if (btn.dataset.category === categoryName) {
+            btn.classList.add("active");
+          } else {
+            btn.classList.remove("active");
+          }
+        });
 
-                    const title = document.createElement('h2');
-                    title.className = 'category-title';
-                    title.innerHTML = `
+        renderQuestions(allData, searchQuery, activeCategory);
+      }
+
+      // Навешивание события поиска
+      const searchInput = document.getElementById("searchInput");
+      searchInput.addEventListener("input", (e) => {
+        searchQuery = e.target.value.toLowerCase().trim();
+        renderQuestions(allData, searchQuery, activeCategory);
+      });
+
+      // Рендеринг списка вопросов с учетом выбранных фильтров
+      function renderQuestions(
+        categories,
+        query = "",
+        selectedCategory = "all",
+      ) {
+        const container = document.getElementById("content");
+        container.innerHTML = "";
+
+        let foundAny = false;
+
+        categories.forEach((cat) => {
+          // Если выбран определенный фильтр (не "Все") и он не совпадает с текущей категорией — пропускаем
+          if (selectedCategory !== "all" && cat.category !== selectedCategory) {
+            return;
+          }
+
+          // Фильтруем вопросы по поисковому запросу внутри категории
+          const filteredItems = cat.items.filter(
+            (item) =>
+              item.question.toLowerCase().includes(query) ||
+              item.answer.toLowerCase().includes(query),
+          );
+
+          // Если само название категории совпадает с поиском, показываем все её вопросы, иначе только отфильтрованные
+          const categoryMatches = cat.category.toLowerCase().includes(query);
+          const itemsToShow = categoryMatches ? cat.items : filteredItems;
+
+          if (itemsToShow.length > 0) {
+            foundAny = true;
+
+            const catDiv = document.createElement("div");
+            catDiv.className = "category";
+
+            const title = document.createElement("h2");
+            title.className = "category-title";
+            title.innerHTML = `
                         <span>${cat.category}</span>
                         <span class="category-count">${itemsToShow.length}</span>
                     `;
-                    catDiv.appendChild(title);
+            catDiv.appendChild(title);
 
-                    itemsToShow.forEach(item => {
-                        const qBlock = document.createElement('div');
-                        qBlock.className = 'question-block';
-                        
-                        const qDiv = document.createElement('div');
-                        qDiv.className = 'question';
-                        
-                        const qText = document.createElement('span');
-                        qText.innerText = item.question;
-                        
-                        const arrow = document.createElement('span');
-                        arrow.className = 'question-arrow';
-                        arrow.innerHTML = '▶';
-                        
-                        qDiv.appendChild(qText);
-                        qDiv.appendChild(arrow);
+            itemsToShow.forEach((item) => {
+              const qBlock = document.createElement("div");
+              qBlock.className = "question-block";
 
-                        const aDiv = document.createElement('div');
-                        aDiv.className = 'answer';
-                        aDiv.innerText = item.answer;
+              const qDiv = document.createElement("div");
+              qDiv.className = "question";
 
-                        // Сворачивание / Разворачивание
-                        qDiv.addEventListener('click', () => {
-                            const isActive = qDiv.classList.toggle('active');
-                            aDiv.classList.toggle('show');
-                            arrow.innerHTML = isActive ? '▼' : '▶';
-                        });
+              const qText = document.createElement("span");
+              qText.innerText = item.question;
 
-                        qBlock.appendChild(qDiv);
-                        qBlock.appendChild(aDiv);
-                        catDiv.appendChild(qBlock);
-                    });
+              const arrow = document.createElement("span");
+              arrow.className = "question-arrow";
+              arrow.innerHTML = "▶";
 
-                    container.appendChild(catDiv);
-                }
+              qDiv.appendChild(qText);
+              qDiv.appendChild(arrow);
+
+              const aDiv = document.createElement("div");
+              aDiv.className = "answer";
+              aDiv.innerText = item.answer;
+
+              // Сворачивание / Разворачивание
+              qDiv.addEventListener("click", () => {
+                const isActive = qDiv.classList.toggle("active");
+                aDiv.classList.toggle("show");
+                arrow.innerHTML = isActive ? "▼" : "▶";
+              });
+
+              qBlock.appendChild(qDiv);
+              qBlock.appendChild(aDiv);
+              catDiv.appendChild(qBlock);
             });
 
-            if (!foundAny) {
-                container.innerHTML = '<div class="no-results">По вашему запросу ничего не найдено 😕</div>';
-            }
+            container.appendChild(catDiv);
+          }
+        });
+
+        if (!foundAny) {
+          container.innerHTML =
+            '<div class="no-results">По вашему запросу ничего не найдено 😕</div>';
         }
+      }
     </script>
-</body>
+  </body>
 </html>
