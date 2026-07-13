@@ -2,69 +2,307 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Конструктор вопросов</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор библиотеки</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background-color: #f3f4f6; }
-        h1 { text-align: center; color: #333; }
-        .back-link { display: inline-block; margin-bottom: 20px; color: #3498db; text-decoration: none; }
-        
-        .form-section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        textarea { height: 100px; resize: vertical; }
-        
-        button { background-color: #2ecc71; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #27ae60; }
-        .btn-download { background-color: #3498db; width: 100%; padding: 15px; font-weight: bold; font-size: 18px; margin-bottom: 30px;}
-        .btn-download:hover { background-color: #2980b9; }
-        .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; margin-left: 10px; }
-        .btn-delete:hover { background-color: #c0392b; }
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary: #10b981;
+            --secondary-hover: #059669;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border: #e2e8f0;
+            --radius: 12px;
+        }
 
-        .preview-section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .preview-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .preview-category-title { background: #eef2f7; padding: 5px 10px; border-radius: 4px; margin-top: 15px; margin-bottom: 5px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.25rem;
+            margin-bottom: 24px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 24px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .btn-download {
+            display: block;
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            padding: 16px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn-download:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-download:active {
+            transform: translateY(1px);
+        }
+
+        /* Двухколоночный макет */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (min-width: 768px) {
+            .workspace {
+                grid-template-columns: 1fr 1.2fr;
+            }
+        }
+
+        .form-section {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+
+        .form-section h2 {
+            font-size: 1.25rem;
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            box-sizing: border-box;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background-color: #fff;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .btn-submit {
+            background-color: var(--secondary);
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--secondary-hover);
+        }
+
+        .preview-section {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .preview-section h2 {
+            font-size: 1.25rem;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        .preview-category {
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .preview-category-header {
+            background: #f1f5f9;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .btn-delete-cat {
+            background-color: #fee2e2;
+            color: var(--danger);
+            border: 1px solid #fca5a5;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .btn-delete-cat:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .preview-item {
+            border-top: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .preview-item-text {
+            font-size: 0.95rem;
+            word-break: break-word;
+        }
+
+        .btn-delete {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-delete:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .empty-message {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="back-link">← На главную к вопросам</a>
-    <h1>Конструктор вопросов</h1>
+    <a href="index.html" class="back-link">← Назад к библиотеке вопросов</a>
+    <h1>Конструктор библиотеки вопросов</h1>
 
-    <!-- Кнопка сохранения -->
+    <!-- Кнопка сохранения изменений -->
     <button id="downloadBtn" class="btn-download">💾 СКАЧАТЬ ОБНОВЛЕННЫЙ QUESTIONS.JSON</button>
 
-    <!-- Форма добавления -->
-    <div class="form-section">
-        <h2>Добавить новый вопрос в список</h2>
-        <form id="addForm">
-            <div class="form-group">
-                <label for="categoryInput">Категория (выберите из списка или напишите новую):</label>
-                <input type="text" id="categoryInput" list="categoriesDatalist" required placeholder="Например: JavaScript или HTML">
-                <datalist id="categoriesDatalist"></datalist>
+    <div class="workspace">
+        
+        <!-- Левая колонка: Формы добавления -->
+        <div>
+            <!-- 1. Форма добавления КАТЕГОРИИ -->
+            <div class="form-section">
+                <h2>📁 Создать новую категорию</h2>
+                <form id="addCategoryForm">
+                    <div class="form-group">
+                        <label for="categoryNameInput">Название новой категории:</label>
+                        <input type="text" id="categoryNameInput" required placeholder="Например: Node.js, Алгоритмы или Git">
+                    </div>
+                    <button type="submit" class="btn-submit">➕ Добавить категорию</button>
+                </form>
             </div>
-            <div class="form-group">
-                <label for="questionInput">Вопрос:</label>
-                <input type="text" id="questionInput" required placeholder="Например: Что такое замыкание?">
-            </div>
-            <div class="form-group">
-                <label for="answerInput">Ответ:</label>
-                <textarea id="answerInput" required placeholder="Введите подробный ответ..."></textarea>
-            </div>
-            <button type="submit">➕ Добавить в список</button>
-        </form>
-    </div>
 
-    <!-- Список для удаления и просмотра -->
-    <div class="preview-section">
-        <h2>Что сейчас есть в списке:</h2>
-        <div id="questionsList">Загрузка вопросов...</div>
+            <!-- 2. Форма добавления ВОПРОСА -->
+            <div class="form-section">
+                <h2>❓ Добавить вопрос</h2>
+                <form id="addQuestionForm">
+                    <div class="form-group">
+                        <label for="categorySelect">Выберите категорию:</label>
+                        <select id="categorySelect" required>
+                            <!-- Опции будут загружены динамически -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="questionInput">Вопрос:</label>
+                        <input type="text" id="questionInput" required placeholder="Например: Что такое замыкание?">
+                    </div>
+                    <div class="form-group">
+                        <label for="answerInput">Ответ на вопрос:</label>
+                        <textarea id="answerInput" required placeholder="Введите развернутый ответ на вопрос..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-submit" style="background-color: var(--primary);">➕ Добавить вопрос в список</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Правая колонка: Структура и просмотр -->
+        <div class="preview-section">
+            <h2>Текущий состав библиотеки:</h2>
+            <div id="questionsList">Загрузка данных...</div>
+        </div>
+
     </div>
 
     <script>
         let categories = []; 
 
-        // 1. Загружаем текущий файл с сервера
+        // 1. Первоначальная загрузка текущего JSON с сервера
         fetch('questions.json')
             .then(res => {
                 if(!res.ok) throw new Error();
@@ -75,96 +313,177 @@
                 updateUI();
             })
             .catch(() => {
+                // Если файла нет или ошибка — начинаем с пустого списка
                 categories = []; 
                 updateUI();
             });
 
-        // 2. Добавление вопроса
-        document.getElementById('addForm').addEventListener('submit', function(e) {
+        // 2. Обработчик создания НОВОЙ категории
+        document.getElementById('addCategoryForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            const categoryName = document.getElementById('categoryInput').value.trim();
-            const questionText = document.getElementById('questionInput').value.trim();
-            const answerText = document.getElementById('answerInput').value.trim();
+            const newCatName = document.getElementById('categoryNameInput').value.trim();
 
-            let targetCategory = categories.find(c => c.category.toLowerCase() === categoryName.toLowerCase());
-
-            if (!targetCategory) {
-                targetCategory = { category: categoryName, items: [] };
-                categories.push(targetCategory);
+            // Проверяем на дублирование (без учета регистра)
+            const exists = categories.some(c => c.category.toLowerCase() === newCatName.toLowerCase());
+            if (exists) {
+                alert('Такая категория уже существует!');
+                return;
             }
 
-            targetCategory.items.push({
-                question: questionText,
-                answer: answerText
+            categories.push({
+                category: newCatName,
+                items: []
             });
 
-            document.getElementById('questionInput').value = '';
-            document.getElementById('answerInput').value = '';
-
+            document.getElementById('categoryNameInput').value = '';
             updateUI();
         });
 
-        // 3. Обновление интерфейса
+        // 3. Обработчик добавления ВОПРОСА в выбранную категорию
+        document.getElementById('addQuestionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selectedCat = document.getElementById('categorySelect').value;
+            const questionText = document.getElementById('questionInput').value.trim();
+            const answerText = document.getElementById('answerInput').value.trim();
+
+            if (!selectedCat) {
+                alert('Выберите категорию из списка! Если категорий нет, создайте её в блоке выше.');
+                return;
+            }
+
+            const targetCategory = categories.find(c => c.category === selectedCat);
+            if (targetCategory) {
+                targetCategory.items.push({
+                    question: questionText,
+                    answer: answerText
+                });
+
+                document.getElementById('questionInput').value = '';
+                document.getElementById('answerInput').value = '';
+                updateUI();
+            } else {
+                alert('Произошла ошибка: выбранная категория не найдена.');
+            }
+        });
+
+        // 4. Обновление интерфейса
         function updateUI() {
+            renderCategorySelect();
             renderEditorList();
-            renderDatalist();
         }
 
-        function renderDatalist() {
-            const datalist = document.getElementById('categoriesDatalist');
-            datalist.innerHTML = '';
+        // Обновление селекта выбора категорий для формы добавления вопросов
+        function renderCategorySelect() {
+            const select = document.getElementById('categorySelect');
+            select.innerHTML = '';
+
+            if (categories.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.disabled = true;
+                opt.selected = true;
+                opt.textContent = "⚠️ Сначала добавьте категорию!";
+                select.appendChild(opt);
+                return;
+            }
+
+            const placeholder = document.createElement('option');
+            placeholder.value = "";
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            placeholder.textContent = "-- Выберите категорию --";
+            select.appendChild(placeholder);
+
             categories.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c.category;
-                datalist.appendChild(option);
+                const opt = document.createElement('option');
+                opt.value = c.category;
+                opt.textContent = c.category;
+                select.appendChild(opt);
             });
         }
 
+        // Рендеринг правого списка предпросмотра
         function renderEditorList() {
             const listDiv = document.getElementById('questionsList');
             listDiv.innerHTML = '';
 
             if (categories.length === 0) {
-                listDiv.innerHTML = '<p>Список пока пуст.</p>';
+                listDiv.innerHTML = '<div class="empty-message">Библиотека пуста. Создайте первую категорию слева.</div>';
                 return;
             }
 
             categories.forEach((cat, catIndex) => {
-                const catHeader = document.createElement('h3');
-                catHeader.className = 'preview-category-title';
-                catHeader.innerText = cat.category;
-                listDiv.appendChild(catHeader);
+                const catWrapper = document.createElement('div');
+                catWrapper.className = 'preview-category';
 
-                cat.items.forEach((item, itemIndex) => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'preview-item';
-                    
-                    const textSpan = document.createElement('span');
-                    textSpan.innerHTML = `<strong>В:</strong> ${item.question}`;
-                    
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'btn-delete';
-                    deleteBtn.innerText = 'Удалить';
-                    deleteBtn.onclick = () => deleteQuestion(catIndex, itemIndex);
+                // Заголовок категории с кнопкой удаления всей категории
+                const header = document.createElement('div');
+                header.className = 'preview-category-header';
+                
+                const titleSpan = document.createElement('span');
+                titleSpan.innerText = `📁 ${cat.category} (${cat.items.length})`;
+                
+                const deleteCatBtn = document.createElement('button');
+                deleteCatBtn.className = 'btn-delete-cat';
+                deleteCatBtn.innerText = 'Удалить категорию';
+                deleteCatBtn.onclick = () => deleteCategory(catIndex);
 
-                    itemDiv.appendChild(textSpan);
-                    itemDiv.appendChild(deleteBtn);
-                    listDiv.appendChild(itemDiv);
-                });
+                header.appendChild(titleSpan);
+                header.appendChild(deleteCatBtn);
+                catWrapper.appendChild(header);
+
+                // Список вопросов внутри категории
+                if (cat.items.length === 0) {
+                    const emptyItem = document.createElement('div');
+                    emptyItem.className = 'empty-message';
+                    emptyItem.innerText = 'Вопросов в этой категории пока нет.';
+                    catWrapper.appendChild(emptyItem);
+                } else {
+                    cat.items.forEach((item, itemIndex) => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'preview-item';
+
+                        const textDiv = document.createElement('div');
+                        textDiv.className = 'preview-item-text';
+                        textDiv.innerHTML = `<strong>В:</strong> ${item.question}`;
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'btn-delete';
+                        deleteBtn.innerText = 'Удалить';
+                        deleteBtn.onclick = () => deleteQuestion(catIndex, itemIndex);
+
+                        itemDiv.appendChild(textDiv);
+                        itemDiv.appendChild(deleteBtn);
+                        catWrapper.appendChild(itemDiv);
+                    });
+                }
+
+                listDiv.appendChild(catWrapper);
             });
         }
 
-        function deleteQuestion(catIndex, itemIndex) {
-            categories[catIndex].items.splice(itemIndex, 1);
-            
-            if (categories[catIndex].items.length === 0) {
+        // Удаление целой категории
+        function deleteCategory(catIndex) {
+            const catName = categories[catIndex].category;
+            const hasQuestions = categories[catIndex].items.length > 0;
+            const msg = hasQuestions 
+                ? `Вы уверены, что хотите удалить категорию "${catName}" и все вопросы (${categories[catIndex].items.length} шт.) внутри нее?`
+                : `Вы уверены, что хотите удалить пустую категорию "${catName}"?`;
+
+            if (confirm(msg)) {
                 categories.splice(catIndex, 1);
+                updateUI();
             }
-            updateUI();
         }
 
-        // 4. Скачивание обновленного файла JSON
+        // Удаление отдельного вопроса
+        function deleteQuestion(catIndex, itemIndex) {
+            categories[catIndex].items.splice(itemIndex, 1);
+            updateUI(); // Пустая категория остается, чтобы её можно было наполнить или удалить вручную
+        }
+
+        // 5. Скачивание файла JSON
         document.getElementById('downloadBtn').addEventListener('click', () => {
             const jsonString = JSON.stringify(categories, null, 2); 
             const blob = new Blob([jsonString], { type: 'application/json' });
