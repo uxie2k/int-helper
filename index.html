@@ -237,6 +237,14 @@
         color: #e11d48;
       }
 
+      /* Подсветка найденного текста */
+      mark {
+        background-color: #fef08a;
+        color: #0f172a;
+        border-radius: 2px;
+        padding: 0 2px;
+      }
+
       .no-results {
         text-align: center;
         color: var(--text-muted);
@@ -256,7 +264,7 @@
             type="text"
             id="searchInput"
             class="search-input"
-            placeholder="🔍 Быстрый поиск по вопросам и ответам..."
+            placeholder="🔍 Быстрый поиск... (нажмите '/' для фокуса)"
           />
         </div>
         <a href="creator.html" class="nav-link">Панель управления ⚙️</a>
@@ -294,6 +302,16 @@
         safeText = safeText.replace(/`(.*?)`/g, "<code>$1</code>");
 
         return safeText;
+      }
+
+      // Подсветка найденного слова
+      function highlightText(safeHtml, query) {
+        if (!query) return safeHtml;
+        // Экранируем спецсимволы в запросе для безопасного регулярного выражения
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        // Ищем совпадения, игнорируя текст внутри HTML-тегов (чтобы не сломать теги <strong> и <code>)
+        const regex = new RegExp(`(${escapedQuery})(?![^<>]*>)`, "gi");
+        return safeHtml.replace(regex, "<mark>$1</mark>");
       }
 
       // Загрузка вопросов
@@ -370,6 +388,7 @@
         container.innerHTML = "";
 
         let foundAny = false;
+        const isSearching = query.length > 0;
 
         categories.forEach((cat) => {
           // Если выбран определенный фильтр (не "Все") и он не совпадает с текущей категорией — пропускаем
@@ -410,22 +429,34 @@
               qDiv.className = "question";
 
               const qText = document.createElement("span");
-              // Применяем форматирование к тексту вопроса
-              qText.innerHTML = formatMarkdown(item.question);
+              // Форматируем markdown, а затем подсвечиваем поисковый запрос
+              const formattedQuestion = formatMarkdown(item.question);
+              qText.innerHTML = isSearching
+                ? highlightText(formattedQuestion, query)
+                : formattedQuestion;
 
               const arrow = document.createElement("span");
               arrow.className = "question-arrow";
-              arrow.innerHTML = "▶";
+              arrow.innerHTML = isSearching ? "▼" : "▶";
 
               qDiv.appendChild(qText);
               qDiv.appendChild(arrow);
 
               const aDiv = document.createElement("div");
               aDiv.className = "answer";
-              // Применяем форматирование к тексту ответа
-              aDiv.innerHTML = formatMarkdown(item.answer);
+              // Форматируем markdown, а затем подсвечиваем поисковый запрос
+              const formattedAnswer = formatMarkdown(item.answer);
+              aDiv.innerHTML = isSearching
+                ? highlightText(formattedAnswer, query)
+                : formattedAnswer;
 
-              // Сворачивание / Разворачивание
+              // Если идет активный поиск, автоматически разворачиваем карточки
+              if (isSearching) {
+                qDiv.classList.add("active");
+                aDiv.classList.add("show");
+              }
+
+              // Сворачивание / Разворачивание по клику
               qDiv.addEventListener("click", () => {
                 const isActive = qDiv.classList.toggle("active");
                 aDiv.classList.toggle("show");
@@ -446,6 +477,23 @@
             '<div class="no-results">По вашему запросу ничего не найдено 😕</div>';
         }
       }
+
+      // Горячие клавиши для ускорения работы
+      document.addEventListener("keydown", (e) => {
+        // Нажатие на '/' переводит фокус в поиск (если не выбран другой инпут)
+        if (e.key === "/" && document.activeElement !== searchInput) {
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.select();
+        }
+        // Нажатие на 'Escape' очищает поиск и закрывает карточки
+        if (e.key === "Escape" && document.activeElement === searchInput) {
+          searchInput.value = "";
+          searchQuery = "";
+          renderQuestions(allData, searchQuery, activeCategory);
+          searchInput.blur();
+        }
+      });
     </script>
   </body>
 </html>
