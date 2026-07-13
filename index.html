@@ -2,79 +2,290 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Помощник для собеседований</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Библиотека вопросов</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background-color: #f8f9fa; }
-        h1 { text-align: center; color: #2c3e50; }
-        .nav-link { display: block; text-align: center; margin-bottom: 20px; color: #3498db; text-decoration: none; }
-        .nav-link:hover { text-decoration: underline; }
-        .category { margin-bottom: 25px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 20px; }
-        .category-title { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; margin-top: 0; }
-        .question-block { border-bottom: 1px solid #eee; padding: 12px 0; }
-        .question-block:last-child { border-bottom: none; }
-        .question { cursor: pointer; color: #2980b9; font-weight: bold; transition: color 0.2s; }
-        .question:hover { color: #3498db; }
-        .answer { display: none; margin-top: 10px; padding: 12px; background: #fdfdfd; border-left: 4px solid #3498db; border-radius: 0 4px 4px 0; color: #555; line-height: 1.5; white-space: pre-line; }
-        .answer.show { display: block; }
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border: #e2e8f0;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.25rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            font-size: 1.1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .search-container {
+            position: relative;
+            flex-grow: 1;
+            max-width: 450px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .category {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .category-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--text-main);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-count {
+            font-size: 0.8rem;
+            background: var(--border);
+            color: var(--text-muted);
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .question-block {
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+        }
+
+        .question-block:last-child {
+            border-bottom: none;
+        }
+
+        .question {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .question:hover {
+            color: var(--primary);
+        }
+
+        .question-arrow {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            transition: transform 0.2s, color 0.2s;
+        }
+
+        .question.active .question-arrow {
+            transform: rotate(90deg);
+            color: var(--primary);
+        }
+
+        .answer {
+            display: none;
+            margin-top: 12px;
+            padding: 16px;
+            background: var(--bg);
+            border-left: 4px solid var(--primary);
+            border-radius: 0 8px 8px 0;
+            color: var(--text-muted);
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+
+        .answer.show {
+            display: block;
+        }
+
+        .no-results {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px 0;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
+    <h1>Библиотека вопросов</h1>
+    <p class="subtitle">Удобный каталог для подготовки к техническим собеседованиям</p>
 
-    <h1>Вопросы для собеседования</h1>
-    <a href="creator.html" class="nav-link">Перейти в панель добавления вопросов ⚙️</a>
-    
+    <div class="header-actions">
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Быстрый поиск по вопросам и ответам...">
+        </div>
+        <a href="creator.html" class="nav-link">Панель управления ⚙️</a>
+    </div>
+
     <div id="content">Загрузка вопросов...</div>
 
     <script>
+        let allData = [];
+
+        // Загрузка вопросов из JSON
         fetch('questions.json')
             .then(res => res.json())
-            .then(data => renderQuestions(data))
+            .then(data => {
+                allData = data;
+                renderQuestions(allData);
+            })
             .catch(err => {
-                document.getElementById('content').innerText = 'Ошибка загрузки вопросов. Проверьте файл questions.json.';
+                document.getElementById('content').innerHTML = `
+                    <div class="no-results" style="color: #ef4444;">
+                        Ошибка загрузки вопросов. Убедитесь, что файл <strong>questions.json</strong> существует и доступен.
+                    </div>`;
                 console.error(err);
             });
 
-        function renderQuestions(categories) {
+        // Навешивание события поиска
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            renderQuestions(allData, query);
+        });
+
+        // Рендеринг списка вопросов
+        function renderQuestions(categories, query = '') {
             const container = document.getElementById('content');
             container.innerHTML = '';
-
-            if (categories.length === 0) {
-                container.innerHTML = '<p style="text-align:center;">Вопросов пока нет.</p>';
-                return;
-            }
+            
+            let foundAny = false;
 
             categories.forEach(cat => {
-                const catDiv = document.createElement('div');
-                catDiv.className = 'category';
-                
-                const title = document.createElement('h2');
-                title.className = 'category-title';
-                title.innerText = cat.category;
-                catDiv.appendChild(title);
+                // Фильтруем вопросы, которые подходят под запрос (по вопросу или по ответу)
+                const filteredItems = cat.items.filter(item => 
+                    item.question.toLowerCase().includes(query) || 
+                    item.answer.toLowerCase().includes(query)
+                );
 
-                cat.items.forEach(item => {
-                    const qBlock = document.createElement('div');
-                    qBlock.className = 'question-block';
+                // Если имя категории подходит под поиск, можно показать её целиком
+                const categoryMatches = cat.category.toLowerCase().includes(query);
+                const itemsToShow = categoryMatches ? cat.items : filteredItems;
 
-                    const qDiv = document.createElement('div');
-                    qDiv.className = 'question';
-                    qDiv.innerText = item.question;
+                if (itemsToShow.length > 0) {
+                    foundAny = true;
 
-                    const aDiv = document.createElement('div');
-                    aDiv.className = 'answer';
-                    aDiv.innerText = item.answer;
+                    const catDiv = document.createElement('div');
+                    catDiv.className = 'category';
 
-                    qDiv.addEventListener('click', () => {
-                        aDiv.classList.toggle('show');
+                    const title = document.createElement('h2');
+                    title.className = 'category-title';
+                    title.innerHTML = `
+                        <span>${cat.category}</span>
+                        <span class="category-count">${itemsToShow.length}</span>
+                    `;
+                    catDiv.appendChild(title);
+
+                    itemsToShow.forEach(item => {
+                        const qBlock = document.createElement('div');
+                        qBlock.className = 'question-block';
+                        
+                        const qDiv = document.createElement('div');
+                        qDiv.className = 'question';
+                        
+                        const qText = document.createElement('span');
+                        qText.innerText = item.question;
+                        
+                        const arrow = document.createElement('span');
+                        arrow.className = 'question-arrow';
+                        arrow.innerHTML = '▶';
+                        
+                        qDiv.appendChild(qText);
+                        qDiv.appendChild(arrow);
+
+                        const aDiv = document.createElement('div');
+                        aDiv.className = 'answer';
+                        aDiv.innerText = item.answer;
+
+                        // Сворачивание / Разворачивание
+                        qDiv.addEventListener('click', () => {
+                            const isActive = qDiv.classList.toggle('active');
+                            aDiv.classList.toggle('show');
+                            arrow.innerHTML = isActive ? '▼' : '▶';
+                        });
+
+                        qBlock.appendChild(qDiv);
+                        qBlock.appendChild(aDiv);
+                        catDiv.appendChild(qBlock);
                     });
 
-                    qBlock.appendChild(qDiv);
-                    qBlock.appendChild(aDiv);
-                    catDiv.appendChild(qBlock);
-                });
-
-                container.appendChild(catDiv);
+                    container.appendChild(catDiv);
+                }
             });
+
+            if (!foundAny) {
+                container.innerHTML = '<div class="no-results">По вашему запросу ничего не найдено 😕</div>';
+            }
         }
     </script>
 </body>
