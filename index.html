@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Помощник для собеседований</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background-color: #f8f9fa; }
+        h1 { text-align: center; color: #2c3e50; }
+        .nav-link { display: block; text-align: center; margin-bottom: 20px; color: #3498db; text-decoration: none; }
+        .nav-link:hover { text-decoration: underline; }
+        .category { margin-bottom: 25px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 20px; }
+        .category-title { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; margin-top: 0; }
+        .question-block { border-bottom: 1px solid #eee; padding: 12px 0; }
+        .question-block:last-child { border-bottom: none; }
+        .question { cursor: pointer; color: #2980b9; font-weight: bold; transition: color 0.2s; }
+        .question:hover { color: #3498db; }
+        .answer { display: none; margin-top: 10px; padding: 12px; background: #fdfdfd; border-left: 4px solid #3498db; border-radius: 0 4px 4px 0; color: #555; line-height: 1.5; white-space: pre-line; }
+        .answer.show { display: block; }
+    </style>
+</head>
+<body>
+
+    <h1>Вопросы для собеседования</h1>
+    <a href="admin.html" class="nav-link">Перейти в панель добавления вопросов ⚙️</a>
+    
+    <div id="content">Загрузка вопросов...</div>
+
+    <script>
+        fetch('questions.json')
+            .then(res => res.json())
+            .then(data => renderQuestions(data))
+            .catch(err => {
+                document.getElementById('content').innerText = 'Ошибка загрузки вопросов. Проверьте файл questions.json.';
+                console.error(err);
+            });
+
+        function renderQuestions(categories) {
+            const container = document.getElementById('content');
+            container.innerHTML = '';
+
+            if (categories.length === 0) {
+                container.innerHTML = '<p style="text-align:center;">Вопросов пока нет.</p>';
+                return;
+            }
+
+            categories.forEach(cat => {
+                const catDiv = document.createElement('div');
+                catDiv.className = 'category';
+                
+                const title = document.createElement('h2');
+                title.className = 'category-title';
+                title.innerText = cat.category;
+                catDiv.appendChild(title);
+
+                cat.items.forEach(item => {
+                    const qBlock = document.createElement('div');
+                    qBlock.className = 'question-block';
+
+                    const qDiv = document.createElement('div');
+                    qDiv.className = 'question';
+                    qDiv.innerText = item.question;
+
+                    const aDiv = document.createElement('div');
+                    aDiv.className = 'answer';
+                    aDiv.innerText = item.answer;
+
+                    qDiv.addEventListener('click', () => {
+                        aDiv.classList.toggle('show');
+                    });
+
+                    qBlock.appendChild(qDiv);
+                    qBlock.appendChild(aDiv);
+                    catDiv.appendChild(qBlock);
+                });
+
+                container.appendChild(catDiv);
+            });
+        }
+    </script>
+</body>
+</html>
