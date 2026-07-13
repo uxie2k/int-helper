@@ -61,11 +61,12 @@
 
       .search-container {
         flex-grow: 1;
+        position: relative;
       }
 
       .search-input {
         width: 100%;
-        padding: 8px 12px;
+        padding: 8px 40px 8px 12px;
         font-size: 0.95rem;
         border: 1px solid var(--border);
         border-radius: var(--radius-sm);
@@ -79,6 +80,20 @@
       .search-input:focus {
         border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      }
+
+      .search-hint {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.7rem;
+        color: #94a3b8;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
+        pointer-events: none;
+        background: #f8fafc;
       }
 
       .nav-link {
@@ -181,11 +196,21 @@
         justify-content: space-between;
         align-items: center;
         user-select: none;
-        transition: color 0.15s;
+        transition:
+          color 0.15s,
+          background-color 0.15s;
+        border-radius: 6px;
+        padding: 4px 6px;
+        margin: -4px -6px;
       }
 
       .question:hover {
         color: var(--primary);
+      }
+
+      .question.kbd-selected {
+        background-color: #eff6ff;
+        outline: 1px solid #bfdbfe;
       }
 
       .question-arrow {
@@ -194,6 +219,8 @@
         transition:
           transform 0.15s,
           color 0.15s;
+        flex-shrink: 0;
+        margin-left: 8px;
       }
 
       .question.active .question-arrow {
@@ -237,12 +264,12 @@
         color: #e11d48;
       }
 
-      /* Подсветка найденного текста */
-      mark {
-        background-color: #fef08a;
-        color: #0f172a;
-        border-radius: 2px;
+      mark.hl {
+        background-color: #fde68a;
+        color: inherit;
         padding: 0 2px;
+        border-radius: 3px;
+        font-weight: inherit;
       }
 
       .no-results {
@@ -264,8 +291,9 @@
             type="text"
             id="searchInput"
             class="search-input"
-            placeholder="🔍 Быстрый поиск... (нажмите '/' для фокуса)"
+            placeholder="🔍 Быстрый поиск по вопросам и ответам..."
           />
+          <span class="search-hint">/</span>
         </div>
         <a href="creator.html" class="nav-link">Панель управления ⚙️</a>
       </div>
@@ -283,38 +311,133 @@
       let activeCategory = "all"; // Хранит выбранный фильтр ('all' или имя категории)
       let searchQuery = ""; // Хранит текущую поисковую строку
 
-      // Функция для безопасного рендеринга Markdown-подобного текста (жирный и код)
-      function formatMarkdown(text) {
-        if (!text) return "";
+      // Плоский список отрендеренных .question элементов (для навигации стрелками)
+      let currentVisibleQuestions = [];
+      let selectedIndex = -1;
 
-        // Сначала экранируем HTML, чтобы предотвратить XSS-уязвимости
-        let safeText = text
+      // ---------- Форматирование текста ----------
+
+      function escapeHtml(text) {
+        return text
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#039;");
+      }
 
+      function applyInlineFormatting(safeText) {
         // Замена **текст** на <strong>текст</strong>
         safeText = safeText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-
-        // Замена `код` на <code>код</code> (для подсветки директив)
+        // Замена `код` на <code>код</code>
         safeText = safeText.replace(/`(.*?)`/g, "<code>$1</code>");
-
         return safeText;
       }
 
-      // Подсветка найденного слова
-      function highlightText(safeHtml, query) {
-        if (!query) return safeHtml;
-        // Экранируем спецсимволы в запросе для безопасного регулярного выражения
-        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        // Ищем совпадения, игнорируя текст внутри HTML-тегов (чтобы не сломать теги <strong> и <code>)
-        const regex = new RegExp(`(${escapedQuery})(?![^<>]*>)`, "gi");
-        return safeHtml.replace(regex, "<mark>$1</mark>");
+      // Обратная совместимость (используется, когда поиск пустой)
+      function formatMarkdown(text) {
+        if (!text) return "";
+        return applyInlineFormatting(escapeHtml(text));
       }
 
-      // Загрузка вопросов
+      // ---------- Нечёткий поиск (устойчив к опечаткам) ----------
+
+      function levenshtein(a, b) {
+        const m = a.length,
+          n = b.length;
+        if (m === 0) return n;
+        if (n === 0) return m;
+        const dp = new Array(n + 1);
+        for (let j = 0; j <= n; j++) dp[j] = j;
+        for (let i = 1; i <= m; i++) {
+          let prev = dp[0];
+          dp[0] = i;
+          for (let j = 1; j <= n; j++) {
+            const temp = dp[j];
+            dp[j] =
+              a[i - 1] === b[j - 1]
+                ? prev
+                : 1 + Math.min(prev, dp[j], dp[j - 1]);
+            prev = temp;
+          }
+        }
+        return dp[n];
+      }
+
+      // Ищет query в text: сначала точное вхождение подстроки,
+      // затем — по словам, допуская опечатки (расстояние Левенштейна)
+      function fuzzyMatch(text, query) {
+        if (!query) return { match: false };
+        const lowerText = text.toLowerCase();
+        const lowerQuery = query.toLowerCase();
+
+        const idx = lowerText.indexOf(lowerQuery);
+        if (idx !== -1) {
+          return {
+            match: true,
+            exact: true,
+            index: idx,
+            length: lowerQuery.length,
+          };
+        }
+
+        // Нечёткое сравнение по словам (юникод: буквы + цифры, работает с кириллицей)
+        const wordRe = /[\p{L}\p{N}]+/gu;
+        const threshold =
+          lowerQuery.length <= 4 ? 1 : Math.ceil(lowerQuery.length / 4);
+
+        let best = null;
+        let m;
+        while ((m = wordRe.exec(lowerText)) !== null) {
+          const word = m[0];
+          if (Math.abs(word.length - lowerQuery.length) > threshold + 1)
+            continue;
+          const dist = levenshtein(word, lowerQuery);
+          if (dist <= threshold && (!best || dist < best.dist)) {
+            best = { dist, index: m.index, length: word.length };
+          }
+        }
+
+        if (best) {
+          return {
+            match: true,
+            exact: false,
+            index: best.index,
+            length: best.length,
+            dist: best.dist,
+          };
+        }
+        return { match: false };
+      }
+
+      // Считает результат совпадения для сортировки по релевантности
+      // и возвращает информацию для подсветки
+      function getMatchInfo(rawText, query) {
+        if (!query)
+          return { match: true, score: 0, safeText: escapeHtml(rawText) };
+        const safeText = escapeHtml(rawText);
+        const m = fuzzyMatch(safeText, query);
+        if (!m.match) return { match: false, score: -1, safeText };
+        return { match: true, score: m.exact ? 2 : 1, m, safeText };
+      }
+
+      // Собирает финальный HTML вопроса/ответа с подсветкой найденного фрагмента
+      function renderWithHighlight(info) {
+        const safeText = info.safeText;
+        if (!info.match || !info.m) {
+          return applyInlineFormatting(safeText);
+        }
+        const { index, length } = info.m;
+        const before = safeText.slice(0, index);
+        const matched = safeText.slice(index, index + length);
+        const after = safeText.slice(index + length);
+        const highlighted =
+          before + '<mark class="hl">' + matched + "</mark>" + after;
+        return applyInlineFormatting(highlighted);
+      }
+
+      // ---------- Загрузка данных ----------
+
       fetch("questions.json")
         .then((res) => res.json())
         .then((data) => {
@@ -335,7 +458,6 @@
         const container = document.getElementById("filtersContainer");
         container.innerHTML = "";
 
-        // Кнопка "Все" по дефолту
         const allBtn = document.createElement("button");
         allBtn.className = "filter-btn active";
         allBtn.innerText = "Все";
@@ -343,7 +465,6 @@
         allBtn.addEventListener("click", () => selectCategory("all"));
         container.appendChild(allBtn);
 
-        // Кнопки для каждой категории в порядке из JSON
         categories.forEach((cat) => {
           const btn = document.createElement("button");
           btn.className = "filter-btn";
@@ -354,11 +475,9 @@
         });
       }
 
-      // Логика выбора категории по кнопке
       function selectCategory(categoryName) {
         activeCategory = categoryName;
 
-        // Визуальное переключение активного класса у кнопок
         const buttons = document.querySelectorAll(".filter-btn");
         buttons.forEach((btn) => {
           if (btn.dataset.category === categoryName) {
@@ -371,14 +490,14 @@
         renderQuestions(allData, searchQuery, activeCategory);
       }
 
-      // Навешивание события поиска
       const searchInput = document.getElementById("searchInput");
       searchInput.addEventListener("input", (e) => {
-        searchQuery = e.target.value.toLowerCase().trim();
+        searchQuery = e.target.value.trim();
         renderQuestions(allData, searchQuery, activeCategory);
       });
 
-      // Рендеринг списка вопросов с учетом выбранных фильтров
+      // ---------- Рендеринг списка вопросов ----------
+
       function renderQuestions(
         categories,
         query = "",
@@ -386,29 +505,45 @@
       ) {
         const container = document.getElementById("content");
         container.innerHTML = "";
+        currentVisibleQuestions = [];
+        selectedIndex = -1;
 
         let foundAny = false;
-        const isSearching = query.length > 0;
+        let totalShown = 0;
+        let singleQaPair = null; // { qDiv, aDiv } если найден единственный результат
 
         categories.forEach((cat) => {
-          // Если выбран определенный фильтр (не "Все") и он не совпадает с текущей категорией — пропускаем
           if (selectedCategory !== "all" && cat.category !== selectedCategory) {
             return;
           }
 
-          // Фильтруем вопросы по поисковому запросу внутри категории
-          const filteredItems = cat.items.filter(
-            (item) =>
-              item.question.toLowerCase().includes(query) ||
-              item.answer.toLowerCase().includes(query),
-          );
+          const categoryMatches =
+            !query || cat.category.toLowerCase().includes(query.toLowerCase());
 
-          // Если само название категории совпадает с поиском, показываем все её вопросы, иначе только отфильтрованные
-          const categoryMatches = cat.category.toLowerCase().includes(query);
-          const itemsToShow = categoryMatches ? cat.items : filteredItems;
+          // Считаем релевантность и фильтруем вопросы
+          const scoredItems = cat.items
+            .map((item) => {
+              const qInfo = getMatchInfo(item.question, query);
+              const aInfo = getMatchInfo(item.answer, query);
+              let include =
+                !query || categoryMatches || qInfo.match || aInfo.match;
+              // Приоритет: точное совпадение в вопросе > нечёткое в вопросе >
+              // точное в ответе > нечёткое в ответе > совпадение только по названию категории
+              let score = 0;
+              if (qInfo.match) score = Math.max(score, 2 + qInfo.score);
+              if (aInfo.match) score = Math.max(score, aInfo.score);
+              return { item, qInfo, aInfo, include, score };
+            })
+            .filter((x) => x.include);
 
-          if (itemsToShow.length > 0) {
+          // Сортировка по релевантности (более точные совпадения выше)
+          if (query) {
+            scoredItems.sort((a, b) => b.score - a.score);
+          }
+
+          if (scoredItems.length > 0) {
             foundAny = true;
+            totalShown += scoredItems.length;
 
             const catDiv = document.createElement("div");
             catDiv.className = "category";
@@ -416,12 +551,12 @@
             const title = document.createElement("h2");
             title.className = "category-title";
             title.innerHTML = `
-                        <span>${cat.category}</span>
-                        <span class="category-count">${itemsToShow.length}</span>
+                        <span>${escapeHtml(cat.category)}</span>
+                        <span class="category-count">${scoredItems.length}</span>
                     `;
             catDiv.appendChild(title);
 
-            itemsToShow.forEach((item) => {
+            scoredItems.forEach(({ item, qInfo, aInfo }) => {
               const qBlock = document.createElement("div");
               qBlock.className = "question-block";
 
@@ -429,34 +564,19 @@
               qDiv.className = "question";
 
               const qText = document.createElement("span");
-              // Форматируем markdown, а затем подсвечиваем поисковый запрос
-              const formattedQuestion = formatMarkdown(item.question);
-              qText.innerHTML = isSearching
-                ? highlightText(formattedQuestion, query)
-                : formattedQuestion;
+              qText.innerHTML = renderWithHighlight(qInfo);
 
               const arrow = document.createElement("span");
               arrow.className = "question-arrow";
-              arrow.innerHTML = isSearching ? "▼" : "▶";
+              arrow.innerHTML = "▶";
 
               qDiv.appendChild(qText);
               qDiv.appendChild(arrow);
 
               const aDiv = document.createElement("div");
               aDiv.className = "answer";
-              // Форматируем markdown, а затем подсвечиваем поисковый запрос
-              const formattedAnswer = formatMarkdown(item.answer);
-              aDiv.innerHTML = isSearching
-                ? highlightText(formattedAnswer, query)
-                : formattedAnswer;
+              aDiv.innerHTML = renderWithHighlight(aInfo);
 
-              // Если идет активный поиск, автоматически разворачиваем карточки
-              if (isSearching) {
-                qDiv.classList.add("active");
-                aDiv.classList.add("show");
-              }
-
-              // Сворачивание / Разворачивание по клику
               qDiv.addEventListener("click", () => {
                 const isActive = qDiv.classList.toggle("active");
                 aDiv.classList.toggle("show");
@@ -466,6 +586,12 @@
               qBlock.appendChild(qDiv);
               qBlock.appendChild(aDiv);
               catDiv.appendChild(qBlock);
+
+              currentVisibleQuestions.push(qDiv);
+              if (totalShown === 1 && scoredItems.length === 1) {
+                // потенциальный единственный результат — уточним после всего цикла
+              }
+              singleQaPair = { qDiv, aDiv };
             });
 
             container.appendChild(catDiv);
@@ -476,18 +602,55 @@
           container.innerHTML =
             '<div class="no-results">По вашему запросу ничего не найдено 😕</div>';
         }
+
+        // Автораскрытие, если результат ровно один
+        if (query && totalShown === 1 && singleQaPair) {
+          singleQaPair.qDiv.click();
+        }
       }
 
-      // Горячие клавиши для ускорения работы
+      // ---------- Горячие клавиши ----------
+
+      function updateKeyboardSelection(newIndex) {
+        if (!currentVisibleQuestions.length) return;
+        if (selectedIndex >= 0 && currentVisibleQuestions[selectedIndex]) {
+          currentVisibleQuestions[selectedIndex].classList.remove(
+            "kbd-selected",
+          );
+        }
+        selectedIndex =
+          ((newIndex % currentVisibleQuestions.length) +
+            currentVisibleQuestions.length) %
+          currentVisibleQuestions.length;
+        const el = currentVisibleQuestions[selectedIndex];
+        el.classList.add("kbd-selected");
+        el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+
+      // "/" — фокус на поиск из любого места страницы
       document.addEventListener("keydown", (e) => {
-        // Нажатие на '/' переводит фокус в поиск (если не выбран другой инпут)
         if (e.key === "/" && document.activeElement !== searchInput) {
           e.preventDefault();
           searchInput.focus();
-          searchInput.select();
         }
-        // Нажатие на 'Escape' очищает поиск и закрывает карточки
-        if (e.key === "Escape" && document.activeElement === searchInput) {
+      });
+
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          updateKeyboardSelection(selectedIndex + 1);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          updateKeyboardSelection(selectedIndex - 1);
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (selectedIndex === -1 && currentVisibleQuestions.length) {
+            updateKeyboardSelection(0);
+          }
+          if (selectedIndex !== -1 && currentVisibleQuestions[selectedIndex]) {
+            currentVisibleQuestions[selectedIndex].click();
+          }
+        } else if (e.key === "Escape") {
           searchInput.value = "";
           searchQuery = "";
           renderQuestions(allData, searchQuery, activeCategory);
