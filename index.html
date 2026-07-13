@@ -293,7 +293,7 @@
             class="search-input"
             placeholder="🔍 Быстрый поиск по вопросам и ответам..."
           />
-          <span class="search-hint">/</span>
+          <span class="search-hint">начни печатать</span>
         </div>
         <a href="creator.html" class="nav-link">Панель управления ⚙️</a>
       </div>
@@ -625,11 +625,17 @@
         el.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
 
-      // "/" — фокус на поиск из любого места страницы
+      // Любая буква (рус/англ) или символ, если фокус ещё не в поиске,
+      // сразу переводит фокус в поле поиска — и символ вводится туда же.
+      // Пробел и служебные клавиши (стрелки, Enter, Ctrl+... и т.д.) не трогаем,
+      // чтобы не ломать обычное поведение страницы.
       document.addEventListener("keydown", (e) => {
-        if (e.key === "/" && document.activeElement !== searchInput) {
-          e.preventDefault();
+        if (document.activeElement === searchInput) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key.length === 1 && e.key !== " ") {
           searchInput.focus();
+          // preventDefault не вызываем — символ сам допечатается в поле,
+          // т.к. на момент вставки символа фокус уже переключён.
         }
       });
 
