@@ -219,6 +219,17 @@
         display: block;
       }
 
+      /* Дополнительное оформление для вставок кода в тексте */
+      code {
+        font-family:
+          SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+        background-color: #f1f5f9;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        color: #e11d48; /* Выделение кода цветом */
+      }
+
       .no-results {
         text-align: center;
         color: var(--text-muted);
@@ -259,6 +270,27 @@
       let allData = [];
       let activeCategory = "all"; // Хранит выбранный фильтр ('all' или имя категории)
       let searchQuery = ""; // Хранит текущую поисковую строку
+
+      // Функция для безопасного рендеринга Markdown-подобного текста (жирный и код)
+      function formatMarkdown(text) {
+        if (!text) return "";
+
+        // Сначала экранируем HTML, чтобы предотвратить XSS-уязвимости
+        let safeText = text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+
+        // Замена **текст** на <strong>текст</strong>
+        safeText = safeText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+        // Замена `код` на <code>код</code> (для подсветки директив)
+        safeText = safeText.replace(/`(.*?)`/g, "<code>$1</code>");
+
+        return safeText;
+      }
 
       // Загрузка вопросов
       fetch("questions.json")
@@ -374,7 +406,8 @@
               qDiv.className = "question";
 
               const qText = document.createElement("span");
-              qText.innerText = item.question;
+              // Применяем форматирование к тексту вопроса
+              qText.innerHTML = formatMarkdown(item.question);
 
               const arrow = document.createElement("span");
               arrow.className = "question-arrow";
@@ -385,7 +418,8 @@
 
               const aDiv = document.createElement("div");
               aDiv.className = "answer";
-              aDiv.innerText = item.answer;
+              // Применяем форматирование к тексту ответа
+              aDiv.innerHTML = formatMarkdown(item.answer);
 
               // Сворачивание / Разворачивание
               qDiv.addEventListener("click", () => {
