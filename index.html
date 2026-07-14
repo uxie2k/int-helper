@@ -246,6 +246,30 @@
         display: block;
       }
 
+      /* Метка источника совпадения (показывается только при активном поиске) */
+      .match-badge {
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        border-radius: 999px;
+        margin-left: 8px;
+        vertical-align: middle;
+        white-space: nowrap;
+      }
+
+      .match-badge.in-question {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .match-badge.in-answer {
+        background: #f1f5f9;
+        color: var(--text-muted);
+      }
+
       /* Дополнительное оформление для вставок кода в тексте */
       code {
         font-family:
@@ -278,6 +302,13 @@
         padding: 30px 0;
         font-size: 1rem;
       }
+
+      .results-summary {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-bottom: 12px;
+      }
     </style>
   </head>
   <body>
@@ -304,12 +335,18 @@
       </div>
     </div>
 
+    <div
+      id="resultsSummary"
+      class="results-summary"
+      style="display: none"
+    ></div>
     <div id="content">Загрузка вопросов...</div>
 
     <script>
       let allData = [];
       let activeCategory = "all"; // Хранит выбранный фильтр ('all' или имя категории)
       let searchQuery = ""; // Хранит текущую поисковую строку
+      let searchDebounceTimer = null;
 
       // Плоский список отрендеренных .question элементов (для навигации стрелками)
       let currentVisibleQuestions = [];
@@ -373,9 +410,14 @@
 
         const idx = lowerText.indexOf(lowerQuery);
         if (idx !== -1) {
+          // Совпадение в начале слова ценится чуть выше, чем в середине —
+          // помогает при примерно равных по длине совпадениях.
+          const isWordStart =
+            idx === 0 || /[^\p{L}\p{N}]/u.test(lowerText[idx - 1]);
           return {
             match: true,
             exact: true,
+            wordStart: isWordStart,
             index: idx,
             length: lowerQuery.length,
           };
@@ -418,7 +460,10 @@
         const safeText = escapeHtml(rawText);
         const m = fuzzyMatch(safeText, query);
         if (!m.match) return { match: false, score: -1, safeText };
-        return { match: true, score: m.exact ? 2 : 1, m, safeText };
+        // Бонус за точное совпадение в начале слова
+        let score = m.exact ? 2 : 1;
+        if (m.exact && m.wordStart) score += 0.5;
+        return { match: true, score, m, safeText };
       }
 
       // Собирает финальный HTML вопроса/ответа с подсветкой найденного фрагмента
@@ -492,8 +537,14 @@
 
       const searchInput = document.getElementById("searchInput");
       searchInput.addEventListener("input", (e) => {
-        searchQuery = e.target.value.trim();
-        renderQuestions(allData, searchQuery, activeCategory);
+        const value = e.target.value.trim();
+        // Небольшой дебаунс — на крупных базах вопросов не пересчитываем
+        // нечёткий поиск на каждое нажатие клавиши.
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+          searchQuery = value;
+          renderQuestions(allData, searchQuery, activeCategory);
+        }, 120);
       });
 
       // ---------- Рендеринг списка вопросов ----------
@@ -504,20 +555,25 @@
         selectedCategory = "all",
       ) {
         const container = document.getElementById("content");
+        const summaryEl = document.getElementById("resultsSummary");
         container.innerHTML = "";
         currentVisibleQuestions = [];
         selectedIndex = -1;
 
-        let foundAny = false;
-        let totalShown = 0;
         const isSearching = !!query;
+        let totalShown = 0;
+
+        // Собираем карточки категорий отдельно от их вставки в DOM,
+        // чтобы иметь возможность отсортировать категории между собой
+        // по релевантности (лучший результат — вопрос > ответ).
+        const renderedCategories = [];
 
         categories.forEach((cat) => {
           if (selectedCategory !== "all" && cat.category !== selectedCategory) {
             return;
           }
 
-          const categoryMatches =
+          const categoryNameMatches =
             !query || cat.category.toLowerCase().includes(query.toLowerCase());
 
           // Считаем релевантность и фильтруем вопросы
@@ -526,23 +582,36 @@
               const qInfo = getMatchInfo(item.question, query);
               const aInfo = getMatchInfo(item.answer, query);
               let include =
-                !query || categoryMatches || qInfo.match || aInfo.match;
-              // Приоритет: точное совпадение в вопросе > нечёткое в вопросе >
-              // точное в ответе > нечёткое в ответе > совпадение только по названию категории
-              let score = 0;
-              if (qInfo.match) score = Math.max(score, 2 + qInfo.score);
-              if (aInfo.match) score = Math.max(score, aInfo.score);
-              return { item, qInfo, aInfo, include, score };
+                !query || categoryNameMatches || qInfo.match || aInfo.match;
+              // Приоритет: совпадение в вопросе > совпадение в ответе >
+              // совпадение только по названию категории.
+              let score = -1;
+              let source = null;
+              if (qInfo.match) {
+                score = 10 + qInfo.score; // 11.5 / 11 / 10 в зависимости от типа совпадения
+                source = "question";
+              }
+              if (aInfo.match && (!qInfo.match || aInfo.score > 0)) {
+                const answerScore = aInfo.score; // 1..2.5
+                if (!qInfo.match) {
+                  score = answerScore;
+                  source = "answer";
+                }
+              }
+              if (!qInfo.match && !aInfo.match && categoryNameMatches) {
+                score = 0;
+              }
+              return { item, qInfo, aInfo, include, score, source };
             })
             .filter((x) => x.include);
 
-          // Сортировка по релевантности (более точные совпадения выше)
+          // Сортировка внутри карточки: сперва вопросы, где совпадение
+          // найдено прямо в тексте вопроса, затем — только в ответе.
           if (query) {
             scoredItems.sort((a, b) => b.score - a.score);
           }
 
           if (scoredItems.length > 0) {
-            foundAny = true;
             totalShown += scoredItems.length;
 
             const catDiv = document.createElement("div");
@@ -556,7 +625,9 @@
                     `;
             catDiv.appendChild(title);
 
-            scoredItems.forEach(({ item, qInfo, aInfo }) => {
+            const catQuestionEls = [];
+
+            scoredItems.forEach(({ item, qInfo, aInfo, source }) => {
               const qBlock = document.createElement("div");
               qBlock.className = "question-block";
 
@@ -565,6 +636,16 @@
 
               const qText = document.createElement("span");
               qText.innerHTML = renderWithHighlight(qInfo);
+
+              // Показываем бейдж только при активном поиске и только
+              // когда совпадение найдено в ответе, а не в вопросе —
+              // чтобы было понятно, почему результат оказался ниже.
+              if (isSearching && source === "answer") {
+                const badge = document.createElement("span");
+                badge.className = "match-badge in-answer";
+                badge.innerText = "совпадение в ответе";
+                qText.appendChild(badge);
+              }
 
               const arrow = document.createElement("span");
               arrow.className = "question-arrow";
@@ -594,16 +675,45 @@
               qBlock.appendChild(aDiv);
               catDiv.appendChild(qBlock);
 
-              currentVisibleQuestions.push(qDiv);
+              catQuestionEls.push(qDiv);
             });
 
-            container.appendChild(catDiv);
+            // Лучший скор карточки — по нему сортируются сами категории,
+            // чтобы категория с совпадением в вопросе была выше категории,
+            // где нашлось совпадение только в ответе (даже если та шла
+            // раньше в исходном списке категорий).
+            const bestScore = scoredItems.reduce(
+              (max, x) => Math.max(max, x.score),
+              -1,
+            );
+
+            renderedCategories.push({
+              bestScore,
+              element: catDiv,
+              questionEls: catQuestionEls,
+            });
           }
         });
 
-        if (!foundAny) {
+        // Глобальная сортировка категорий по релевантности при поиске.
+        if (isSearching) {
+          renderedCategories.sort((a, b) => b.bestScore - a.bestScore);
+        }
+
+        renderedCategories.forEach(({ element, questionEls }) => {
+          container.appendChild(element);
+          currentVisibleQuestions.push(...questionEls);
+        });
+
+        if (renderedCategories.length === 0) {
           container.innerHTML =
             '<div class="no-results">По вашему запросу ничего не найдено 😕</div>';
+          summaryEl.style.display = "none";
+        } else if (isSearching) {
+          summaryEl.style.display = "block";
+          summaryEl.innerText = `Найдено результатов: ${totalShown}`;
+        } else {
+          summaryEl.style.display = "none";
         }
       }
 
